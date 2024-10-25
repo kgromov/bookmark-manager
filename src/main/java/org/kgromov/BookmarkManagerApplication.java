@@ -22,7 +22,7 @@ public class BookmarkManagerApplication {
 		SpringApplication.run(BookmarkManagerApplication.class, args);
 	}
 
-
+	@Profile("debug")
 	@Bean
 	ApplicationRunner applicationRunner(BookmarkParser bookmarkParser) {
 		return args -> {
