@@ -1,6 +1,7 @@
 package org.kgromov.model;
 
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
 
 public record BookmarkFolderNode(
@@ -12,16 +13,11 @@ public record BookmarkFolderNode(
         List<BookmarkNode> bookmarks
 ) {
 
-    public BookmarkFolderNode(BookmarkFolder folder,
-                              List<BookmarkFolderNode> subFolders,
-                              List<BookmarkNode> bookmarks) {
-        this(folder.name(),
-                folder.created(),
-                folder.modified(),
-                folder.parentPath(),
-                subFolders,
-                bookmarks
-        );
+    public BookmarkFolderNode(String name,
+                              Instant created,
+                              Instant modified,
+                              String parentPath) {
+        this(name, created, modified, parentPath, new ArrayList<>(), new ArrayList<>());
     }
 
     public String getPath() {

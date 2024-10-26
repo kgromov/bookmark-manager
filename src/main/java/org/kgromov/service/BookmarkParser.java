@@ -25,18 +25,18 @@ public class BookmarkParser {
     @SneakyThrows
     public List<BookmarkFolderNode> parseBookmarksTree(Path bookmarkPath) {
         StopWatch stopWatch = new StopWatch();
-        stopWatch.start();
+        stopWatch.start("parseBookmarksTree");
         try {
             Document document = Jsoup.parse(bookmarkPath);
             Elements parentFolders = document.select("body>dl>dt>h3");
             List<BookmarkFolderNode> folderNodes = new ArrayList<>();
             parentFolders.forEach(parentFolder -> {
-                var bookmarkFolder = mapper.mapToBookmarkFolder(parentFolder, (BookmarkFolderNode) null);
-                var folderBookmarks = this.parseBookmarks(parentFolder);
+                var bookmarkFolder = mapper.mapToBookmarkFolder(parentFolder, null);
+                var folderBookmarks = this.findBookmarks(parentFolder, bookmarkFolder);
+                bookmarkFolder.bookmarks().addAll(folderBookmarks);
                 Elements subFolders = parentFolder.selectXpath("../dl/dt/h3");
-                var folderNode = new BookmarkFolderNode(bookmarkFolder, new ArrayList<>(), folderBookmarks);
-                folderNodes.add(folderNode);
-                subFolders.forEach(subFolder -> this.buildTree(subFolder, folderNode));
+                folderNodes.add(bookmarkFolder);
+                subFolders.forEach(subFolder -> this.buildTree(subFolder, bookmarkFolder));
             });
             return folderNodes;
         } finally {
@@ -47,18 +47,17 @@ public class BookmarkParser {
 
     private void buildTree(Element folder, BookmarkFolderNode parentNode) {
         var bookmarkFolder = mapper.mapToBookmarkFolder(folder, parentNode);
-        var folderBookmarks = this.parseBookmarks(folder);
+        var folderBookmarks = this.findBookmarks(folder, bookmarkFolder);
+        bookmarkFolder.bookmarks().addAll(folderBookmarks);
         Elements subFolders = folder.selectXpath("../dl/dt/h3");
-        var folderNode = new BookmarkFolderNode(bookmarkFolder, new ArrayList<>(), folderBookmarks);
-        parentNode.subFolders().add(folderNode);
-        subFolders.forEach(subFolder -> buildTree(subFolder, folderNode));
+        parentNode.subFolders().add(bookmarkFolder);
+        subFolders.forEach(subFolder -> buildTree(subFolder, bookmarkFolder));
     }
 
-    private List<BookmarkNode> parseBookmarks(Element folder) {
+    private List<BookmarkNode> findBookmarks(Element folder, BookmarkFolderNode parentNode) {
         Elements bookmarkNodes = folder.selectXpath("../dl/dt/a");
         return bookmarkNodes.stream()
-                .map(mapper::mapToBookmark)
-                .map(BookmarkNode::new)
+                .map(node -> mapper.mapToBookmark(node, parentNode))
                 .toList();
     }
 }

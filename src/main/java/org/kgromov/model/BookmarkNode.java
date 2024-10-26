@@ -13,16 +13,4 @@ public record BookmarkNode(
         Instant modified,
         String cssSelector,
         String parentPath) {
-
-    public BookmarkNode(Bookmark bookmark) {
-        this(
-                bookmark.name(),
-                bookmark.href(),
-                bookmark.tags(),
-                bookmark.created(),
-                bookmark.modified(),
-                bookmark.cssSelector(),
-                bookmark.parentPath()
-        );
-    }
 }
