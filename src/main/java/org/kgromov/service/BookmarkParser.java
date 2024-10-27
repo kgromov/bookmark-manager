@@ -9,6 +9,7 @@ import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import org.kgromov.model.BookmarkFolderNode;
 import org.kgromov.model.BookmarkNode;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StopWatch;
 
@@ -22,6 +23,7 @@ import java.util.List;
 public class BookmarkParser {
     private final BookmarkMapper mapper;
 
+    @Cacheable(cacheNames = "bookmarks", key = "#bookmarkPath")
     @SneakyThrows
     public List<BookmarkFolderNode> parseBookmarksTree(Path bookmarkPath) {
         StopWatch stopWatch = new StopWatch();
