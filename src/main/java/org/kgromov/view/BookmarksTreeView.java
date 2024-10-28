@@ -3,9 +3,13 @@ package org.kgromov.view;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.H3;
+import com.vaadin.flow.component.html.Span;
+import com.vaadin.flow.component.icon.Icon;
+import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.orderedlayout.FlexComponent;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.treegrid.TreeGrid;
+import com.vaadin.flow.function.ValueProvider;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.spring.annotation.SpringComponent;
@@ -20,6 +24,11 @@ import org.springframework.core.io.Resource;
 import java.net.URL;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
+import java.util.TimeZone;
 
 @Slf4j
 @UIScope
@@ -42,9 +51,13 @@ public class BookmarksTreeView extends Div {
         var treeGrid = new TreeGrid<BookmarkFolderNode>();
         var rootItems = bookmarkParser.parseBookmarksTree(bookmarkPath);
         treeGrid.setItems(rootItems, BookmarkFolderNode::subFolders);
-        treeGrid.addHierarchyColumn(BookmarkFolderNode::name).setHeader("Title");
-        treeGrid.addColumn(BookmarkFolderNode::created).setHeader("Created");
-        treeGrid.addColumn(BookmarkFolderNode::modified).setHeader("Modified");
+        treeGrid.addComponentHierarchyColumn(folder -> {
+            var horizontalLayout = new HorizontalLayout(new Icon(VaadinIcon.FOLDER), new Span(folder.name()));
+            horizontalLayout.setAlignItems(FlexComponent.Alignment.CENTER);
+            return horizontalLayout;
+        }).setHeader("Title");
+        treeGrid.addColumn(folder -> formattedDate(folder.created())).setHeader("Created");
+        treeGrid.addColumn(folder -> formattedDate(folder.modified())).setHeader("Modified");
         treeGrid.setHeightFull();
 
         H3 caption = new H3("Bookmarks");
@@ -59,6 +72,12 @@ public class BookmarksTreeView extends Div {
         header.setFlexGrow(1, caption);
 
         add(header, treeGrid);
+
         setSizeFull();
+    }
+
+    private String formattedDate(Instant instant) {
+        return LocalDate.ofInstant(instant, ZoneId.systemDefault())
+                .format(DateTimeFormatter.ofPattern("dd-MM-yyyy"));
     }
 }

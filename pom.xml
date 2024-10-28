@@ -16,7 +16,7 @@
 	<description>bookmark-manager</description>
 
 	<properties>
-		<java.version>23</java.version>
+		<java.version>22</java.version>
 		<vaadin.version>24.5.0</vaadin.version>
 		<jsoup.version>1.18.1</jsoup.version>
 	</properties>
