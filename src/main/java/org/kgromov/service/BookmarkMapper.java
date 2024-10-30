@@ -1,7 +1,7 @@
 package org.kgromov.service;
 
 import org.jsoup.nodes.Element;
-import org.kgromov.model.BookmarkFolderNode;
+import org.kgromov.model.FolderNode;
 import org.kgromov.model.BookmarkNode;
 import org.springframework.stereotype.Component;
 
@@ -14,16 +14,16 @@ import static java.util.Optional.ofNullable;
 @Component
 public class BookmarkMapper {
 
-    public BookmarkFolderNode mapToBookmarkFolder(Element folderNode, BookmarkFolderNode parentNode) {
-        return new BookmarkFolderNode(
+    public FolderNode mapToBookmarkFolder(Element folderNode, FolderNode parentNode) {
+        return new FolderNode(
                 folderNode.text(),
                 Instant.ofEpochSecond(Long.parseLong(folderNode.attr("ADD_DATE"))),
                 Instant.ofEpochSecond(Long.parseLong(folderNode.attr("LAST_MODIFIED"))),
-                ofNullable(parentNode).map(BookmarkFolderNode::getPath).orElse("")
+                ofNullable(parentNode).map(FolderNode::getPath).orElse("")
         );
     }
 
-    public BookmarkNode mapToBookmark(Element bookmarkNode, BookmarkFolderNode parentFolder) {
+    public BookmarkNode mapToBookmark(Element bookmarkNode, FolderNode parentFolder) {
         return new BookmarkNode(
                 bookmarkNode.text(),
                 URI.create(bookmarkNode.attr("HREF").replaceAll("[{,}]", "")),

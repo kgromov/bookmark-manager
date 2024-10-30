@@ -7,7 +7,7 @@ import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-import org.kgromov.model.BookmarkFolderNode;
+import org.kgromov.model.FolderNode;
 import org.kgromov.model.BookmarkNode;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Component;
@@ -25,13 +25,13 @@ public class BookmarkParser {
 
     @Cacheable(cacheNames = "bookmarks", key = "#bookmarkPath")
     @SneakyThrows
-    public List<BookmarkFolderNode> parseBookmarksTree(Path bookmarkPath) {
+    public List<FolderNode> parseBookmarksTree(Path bookmarkPath) {
         StopWatch stopWatch = new StopWatch();
         stopWatch.start("parseBookmarksTree");
         try {
             Document document = Jsoup.parse(bookmarkPath);
             Elements parentFolders = document.select("body>dl>dt>h3");
-            List<BookmarkFolderNode> folderNodes = new ArrayList<>();
+            List<FolderNode> folderNodes = new ArrayList<>();
             parentFolders.forEach(parentFolder -> {
                 var bookmarkFolder = mapper.mapToBookmarkFolder(parentFolder, null);
                 var folderBookmarks = this.findBookmarks(parentFolder, bookmarkFolder);
@@ -47,7 +47,7 @@ public class BookmarkParser {
         }
     }
 
-    private void buildTree(Element folder, BookmarkFolderNode parentNode) {
+    private void buildTree(Element folder, FolderNode parentNode) {
         var bookmarkFolder = mapper.mapToBookmarkFolder(folder, parentNode);
         var folderBookmarks = this.findBookmarks(folder, bookmarkFolder);
         bookmarkFolder.bookmarks().addAll(folderBookmarks);
@@ -56,7 +56,7 @@ public class BookmarkParser {
         subFolders.forEach(subFolder -> buildTree(subFolder, bookmarkFolder));
     }
 
-    private List<BookmarkNode> findBookmarks(Element folder, BookmarkFolderNode parentNode) {
+    private List<BookmarkNode> findBookmarks(Element folder, FolderNode parentNode) {
         Elements bookmarkNodes = folder.selectXpath("../dl/dt/a");
         return bookmarkNodes.stream()
                 .map(node -> mapper.mapToBookmark(node, parentNode))

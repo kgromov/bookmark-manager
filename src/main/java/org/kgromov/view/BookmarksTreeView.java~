@@ -16,8 +16,7 @@ import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
-import org.kgromov.model.FolderNode;
-import org.kgromov.model.Node;
+import org.kgromov.model.BookmarkFolderNode;
 import org.kgromov.service.BookmarkParser;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
@@ -29,12 +28,7 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-
-import static java.util.Collections.emptyList;
+import java.util.TimeZone;
 
 @Slf4j
 @UIScope
@@ -54,14 +48,11 @@ public class BookmarksTreeView extends Div {
         // TODO: for some reason it's null
 //        Path bookmarkPath = Paths.get(bookmarkFile.getURI());
         Path bookmarkPath = Paths.get(resource.toURI());
-        TreeGrid<Node> treeGrid = new TreeGrid<>();
-        var rootItems = bookmarkParser.parseBookmarksTree(bookmarkPath)
-                .stream()
-                .map(node -> (Node) node).toList();
-        treeGrid.setItems(rootItems, Node::children);
-        treeGrid.addComponentHierarchyColumn(node -> {
-            var icon = (node instanceof FolderNode) ? VaadinIcon.FOLDER : VaadinIcon.BOOKMARK;
-            var horizontalLayout = new HorizontalLayout(new Icon(icon), new Span(node.name()));
+        var treeGrid = new TreeGrid<BookmarkFolderNode>();
+        var rootItems = bookmarkParser.parseBookmarksTree(bookmarkPath);
+        treeGrid.setItems(rootItems, BookmarkFolderNode::subFolders);
+        treeGrid.addComponentHierarchyColumn(folder -> {
+            var horizontalLayout = new HorizontalLayout(new Icon(VaadinIcon.FOLDER), new Span(folder.name()));
             horizontalLayout.setAlignItems(FlexComponent.Alignment.CENTER);
             return horizontalLayout;
         }).setHeader("Title");
