@@ -2,6 +2,7 @@ package org.kgromov.view;
 
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.button.Button;
+import com.vaadin.flow.component.dependency.CssImport;
 import com.vaadin.flow.component.html.Anchor;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.H3;
@@ -12,7 +13,6 @@ import com.vaadin.flow.component.orderedlayout.FlexComponent;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.treegrid.TreeGrid;
 import com.vaadin.flow.dom.Style;
-import com.vaadin.flow.function.ValueProvider;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.spring.annotation.SpringComponent;
@@ -33,18 +33,13 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-
-import static java.util.Collections.emptyList;
 
 @Slf4j
 @UIScope
 @SpringComponent
 @Route("/")
 @PageTitle("Bookmarks page")
+@CssImport("./styles.css")
 public class BookmarksTreeView extends Div {
     private final BookmarkParser bookmarkParser;
 
@@ -59,10 +54,6 @@ public class BookmarksTreeView extends Div {
 //        Path bookmarkPath = Paths.get(bookmarkFile.getURI());
         Path bookmarkPath = Paths.get(resource.toURI());
         TreeGrid<Node> treeGrid = new TreeGrid<>();
-        treeGrid.getStyle()
-                .setWhiteSpace(Style.WhiteSpace.NORMAL)
-                .set("word-wrap", "break-word")
-                .set("word-break", "break-word");
         var rootItems = bookmarkParser.parseBookmarksTree(bookmarkPath)
                 .stream()
                 .map(node -> (Node) node).toList();
@@ -84,7 +75,8 @@ public class BookmarksTreeView extends Div {
         treeGrid.addColumn(node -> String.join(", ", node.tags()))
                 .setHeader("Tags")
                 .setFlexGrow(0)
-                .setWidth("200px");;
+                .setWidth("200px");
+        ;
         treeGrid.setHeightFull();
 
         H3 caption = new H3("Bookmarks");

@@ -3,7 +3,6 @@ package org.kgromov.model;
 
 import java.net.URI;
 import java.time.Instant;
-import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 
