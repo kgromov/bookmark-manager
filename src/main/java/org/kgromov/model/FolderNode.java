@@ -2,10 +2,13 @@ package org.kgromov.model;
 
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static java.util.Collections.emptySet;
 import static java.util.stream.Collectors.toList;
 
 public record FolderNode(
@@ -34,5 +37,10 @@ public record FolderNode(
                 subFolders().stream(),
                 bookmarks().stream()
         ).collect(toList());
+    }
+
+    @Override
+    public Set<String> tags() {
+        return emptySet();
     }
 }

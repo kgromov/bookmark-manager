@@ -1,6 +1,8 @@
 package org.kgromov.view;
 
+import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.button.Button;
+import com.vaadin.flow.component.html.Anchor;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.H3;
 import com.vaadin.flow.component.html.Span;
@@ -9,6 +11,7 @@ import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.orderedlayout.FlexComponent;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.treegrid.TreeGrid;
+import com.vaadin.flow.dom.Style;
 import com.vaadin.flow.function.ValueProvider;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
@@ -16,6 +19,7 @@ import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
+import org.kgromov.model.BookmarkNode;
 import org.kgromov.model.FolderNode;
 import org.kgromov.model.Node;
 import org.kgromov.service.BookmarkParser;
@@ -55,18 +59,32 @@ public class BookmarksTreeView extends Div {
 //        Path bookmarkPath = Paths.get(bookmarkFile.getURI());
         Path bookmarkPath = Paths.get(resource.toURI());
         TreeGrid<Node> treeGrid = new TreeGrid<>();
+        treeGrid.getStyle()
+                .setWhiteSpace(Style.WhiteSpace.NORMAL)
+                .set("word-wrap", "break-word")
+                .set("word-break", "break-word");
         var rootItems = bookmarkParser.parseBookmarksTree(bookmarkPath)
                 .stream()
                 .map(node -> (Node) node).toList();
         treeGrid.setItems(rootItems, Node::children);
-        treeGrid.addComponentHierarchyColumn(node -> {
-            var icon = (node instanceof FolderNode) ? VaadinIcon.FOLDER : VaadinIcon.BOOKMARK;
-            var horizontalLayout = new HorizontalLayout(new Icon(icon), new Span(node.name()));
-            horizontalLayout.setAlignItems(FlexComponent.Alignment.CENTER);
-            return horizontalLayout;
-        }).setHeader("Title");
-        treeGrid.addColumn(folder -> formattedDate(folder.created())).setHeader("Created");
-        treeGrid.addColumn(folder -> formattedDate(folder.modified())).setHeader("Modified");
+        treeGrid.addComponentHierarchyColumn(this::buildNameColumn)
+                .setHeader("Title")
+                .getStyle()
+                .setWhiteSpace(Style.WhiteSpace.NORMAL)
+                .set("word-wrap", "break-word")
+                .set("word-break", "break-word");
+        treeGrid.addColumn(node -> formattedDate(node.created()))
+                .setHeader("Created")
+                .setFlexGrow(0)
+                .setWidth("150px");
+        treeGrid.addColumn(node -> formattedDate(node.modified()))
+                .setHeader("Modified")
+                .setFlexGrow(0)
+                .setWidth("150px");
+        treeGrid.addColumn(node -> String.join(", ", node.tags()))
+                .setHeader("Tags")
+                .setFlexGrow(0)
+                .setWidth("200px");;
         treeGrid.setHeightFull();
 
         H3 caption = new H3("Bookmarks");
@@ -83,6 +101,33 @@ public class BookmarksTreeView extends Div {
         add(header, treeGrid);
 
         setSizeFull();
+    }
+
+    private Component buildNameColumn(Node node) {
+        return (node instanceof FolderNode)
+                ? createFolderNameComponent((FolderNode) node)
+                : createBookmarkNameComponent((BookmarkNode) node);
+    }
+
+    private Component createFolderNameComponent(FolderNode folder) {
+        var horizontalLayout = new HorizontalLayout(
+                new Icon(VaadinIcon.FOLDER),
+                new Span(folder.name())
+        );
+        horizontalLayout.setAlignItems(FlexComponent.Alignment.CENTER);
+        return horizontalLayout;
+    }
+
+    private Component createBookmarkNameComponent(BookmarkNode bookmark) {
+        Anchor bookmarkLink = new Anchor(bookmark.href().toString());
+        bookmarkLink.add(
+                new Icon(VaadinIcon.BOOKMARK),
+                new Span(bookmark.name())
+        );
+        bookmarkLink.getStyle()
+                .set("align-items", "center")
+                .set("display", "flex");
+        return bookmarkLink;
     }
 
     private String formattedDate(Instant instant) {
