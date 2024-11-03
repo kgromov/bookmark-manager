@@ -11,8 +11,9 @@ import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.orderedlayout.FlexComponent;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
+import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.component.treegrid.TreeGrid;
-import com.vaadin.flow.dom.Style;
+import com.vaadin.flow.data.value.ValueChangeMode;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.spring.annotation.SpringComponent;
@@ -33,6 +34,7 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
+import java.util.List;
 
 @Slf4j
 @UIScope
@@ -42,6 +44,7 @@ import java.time.format.DateTimeFormatter;
 @CssImport("./styles.css")
 public class BookmarksTreeView extends Div {
     private final BookmarkParser bookmarkParser;
+    private final TreeGrid<Node> treeGrid =  new TreeGrid<>();
 
     @Value("classpath:bookmarks/bookmarks.html")
     private Resource bookmarkFile;
@@ -49,21 +52,10 @@ public class BookmarksTreeView extends Div {
     @SneakyThrows
     public BookmarksTreeView(BookmarkParser bookmarkParser) {
         this.bookmarkParser = bookmarkParser;
-        URL resource = this.getClass().getClassLoader().getResource("bookmarks/bookmarks.html");
-        // TODO: for some reason it's null
-//        Path bookmarkPath = Paths.get(bookmarkFile.getURI());
-        Path bookmarkPath = Paths.get(resource.toURI());
-        TreeGrid<Node> treeGrid = new TreeGrid<>();
-        var rootItems = bookmarkParser.parseBookmarksTree(bookmarkPath)
-                .stream()
-                .map(node -> (Node) node).toList();
+       var rootItems = this.fetchTreeData();
         treeGrid.setItems(rootItems, Node::children);
         treeGrid.addComponentHierarchyColumn(this::buildNameColumn)
-                .setHeader("Title")
-                .getStyle()
-                .setWhiteSpace(Style.WhiteSpace.NORMAL)
-                .set("word-wrap", "break-word")
-                .set("word-break", "break-word");
+                .setHeader("Title");
         treeGrid.addColumn(node -> formattedDate(node.created()))
                 .setHeader("Created")
                 .setFlexGrow(0)
@@ -74,25 +66,46 @@ public class BookmarksTreeView extends Div {
                 .setWidth("150px");
         treeGrid.addColumn(node -> String.join(", ", node.tags()))
                 .setHeader("Tags")
+                .setKey("tags")
                 .setFlexGrow(0)
                 .setWidth("200px");
-        ;
         treeGrid.setHeightFull();
 
-        H3 caption = new H3("Bookmarks");
-        Button expand = new Button("Expand All");
-        expand.addClickListener(event -> treeGrid.expandRecursively(rootItems, 10));
-        Button collapse = new Button("Collapse All");
-        collapse.addClickListener(event -> treeGrid.collapse(rootItems));
-
-        var header = new HorizontalLayout(caption, expand, collapse);
-        header.setAlignItems(FlexComponent.Alignment.CENTER);
-        header.setHeight("var(--lumo-space-xl)");
-        header.setFlexGrow(1, caption);
+        var header = this.createHeader(rootItems);
 
         add(header, treeGrid);
 
         setSizeFull();
+    }
+
+    private HorizontalLayout createHeader(List<Node> rootItems) {
+        H3 caption = new H3("Bookmarks");
+        Button expand = new Button("Expand All");
+        expand.addClickListener(event -> treeGrid.expandRecursively(rootItems, 32));
+        Button collapse = new Button("Collapse All");
+        collapse.addClickListener(event -> treeGrid.collapse(rootItems));
+
+        var header = new HorizontalLayout(caption, addTagsFilter(), expand, collapse);
+        header.setAlignItems(FlexComponent.Alignment.CENTER);
+        header.setHeight("var(--lumo-space-xl)");
+//        header.setFlexGrow(1, caption);
+        return header;
+    }
+
+    private TextField addTagsFilter() {
+        TextField tagsSearch = new TextField();
+        tagsSearch.setPlaceholder("Search by tag");
+        tagsSearch.setPrefixComponent(VaadinIcon.SEARCH.create());
+        tagsSearch.setValueChangeMode(ValueChangeMode.EAGER);
+//        var tagsColumn = treeGrid.getColumnByKey("tags");
+        tagsSearch.addValueChangeListener(e -> {
+            log.info("Filter on name value changes: {}", e.getValue());
+            treeGrid.getDataProvider().withConfigurableFilter().setFilter(node ->
+                    node.tags().stream().anyMatch(tag -> tag.toLowerCase().contains(e.getValue().toLowerCase()))
+            );
+            treeGrid.getDataProvider().refreshAll();
+        });
+        return tagsSearch;
     }
 
     private Component buildNameColumn(Node node) {
@@ -120,6 +133,18 @@ public class BookmarksTreeView extends Div {
                 .set("align-items", "center")
                 .set("display", "flex");
         return bookmarkLink;
+    }
+
+    @SneakyThrows
+    private List<Node> fetchTreeData() {
+          URL resource = this.getClass().getClassLoader().getResource("bookmarks/bookmarks.html");
+        // TODO: for some reason it's null
+//        Path bookmarkPath = Paths.get(bookmarkFile.getURI());
+        Path bookmarkPath = Paths.get(resource.toURI());
+        return bookmarkParser.parseBookmarksTree(bookmarkPath)
+                .stream()
+                .map(node -> (Node) node)
+                .toList();
     }
 
     private String formattedDate(Instant instant) {
