@@ -16,6 +16,7 @@ import com.vaadin.flow.component.treegrid.TreeGrid;
 import com.vaadin.flow.data.provider.hierarchy.TreeData;
 import com.vaadin.flow.data.provider.hierarchy.TreeDataProvider;
 import com.vaadin.flow.data.value.ValueChangeMode;
+import com.vaadin.flow.function.SerializablePredicate;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.spring.annotation.SpringComponent;
@@ -100,7 +101,7 @@ public class BookmarksTreeView extends Div {
 
     private TextField addTagsFilter() {
         TextField tagsSearch = new TextField();
-        tagsSearch.setPlaceholder("Search by tag");
+        tagsSearch.setPlaceholder("Search by tag or name");
         tagsSearch.setClearButtonVisible(true);
         tagsSearch.setPrefixComponent(VaadinIcon.SEARCH.create());
         tagsSearch.setValueChangeMode(ValueChangeMode.EAGER);
@@ -109,12 +110,12 @@ public class BookmarksTreeView extends Div {
             if (e.getValue() == null) {
                 dataProvider.setFilter(null);
             } else {
-                dataProvider.setFilter(node ->
-                        node.tags().stream().anyMatch(tag -> tag.toLowerCase().contains(e.getValue().toLowerCase()))
-                );
+                SerializablePredicate<Node> byTag = node ->
+                        node.tags().stream().anyMatch(tag -> tag.toLowerCase().contains(e.getValue().toLowerCase()));
+                SerializablePredicate<Node> byName = node -> node.name().toLowerCase().contains(e.getValue().toLowerCase());
+                dataProvider.setFilter(byTag.or(byName));
             }
             treeGrid.expandRecursively(dataProvider.getTreeData().getRootItems(), 32);
-//            treeGrid.getDataProvider().refreshAll();
         });
         return tagsSearch;
     }
