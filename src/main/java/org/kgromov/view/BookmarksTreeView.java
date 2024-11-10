@@ -26,13 +26,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.kgromov.model.BookmarkNode;
 import org.kgromov.model.FolderNode;
 import org.kgromov.model.Node;
-import org.kgromov.service.BookmarkParser;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.core.io.Resource;
+import org.kgromov.service.BookmarkService;
 
-import java.net.URL;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
@@ -46,19 +41,16 @@ import java.util.List;
 @PageTitle("Bookmarks page")
 @CssImport("./styles.css")
 public class BookmarksTreeView extends Div {
-    private final BookmarkParser bookmarkParser;
+    private final BookmarkService bookmarkService;
     private TreeGrid<Node> treeGrid;
     private TreeDataProvider<Node> dataProvider;
 
-    @Value("classpath:bookmarks/bookmarks.html")
-    private Resource bookmarkFile;
-
     @SneakyThrows
-    public BookmarksTreeView(BookmarkParser bookmarkParser) {
-        this.bookmarkParser = bookmarkParser;
+    public BookmarksTreeView(BookmarkService bookmarkService) {
+        this.bookmarkService = bookmarkService;
         dataProvider = new TreeDataProvider<>(
                 new TreeData<Node>()
-                .addItems(this.fetchBookmarksTree(), Node::children)
+                .addItems(bookmarkService.fetchBookmarksTree(), Node::children)
         );
         treeGrid = new TreeGrid<>(dataProvider);
 
@@ -147,17 +139,7 @@ public class BookmarksTreeView extends Div {
         return bookmarkLink;
     }
 
-    @SneakyThrows
-    private List<Node> fetchBookmarksTree() {
-        URL resource = this.getClass().getClassLoader().getResource("bookmarks/bookmarks.html");
-        // TODO: for some reason it's null
-//        Path bookmarkPath = Paths.get(bookmarkFile.getURI());
-        Path bookmarkPath = Paths.get(resource.toURI());
-        return bookmarkParser.parseBookmarksTree(bookmarkPath)
-                .stream()
-                .map(node -> (Node) node)
-                .toList();
-    }
+
 
     private String formattedDate(Instant instant) {
         return LocalDate.ofInstant(instant, ZoneId.systemDefault())
